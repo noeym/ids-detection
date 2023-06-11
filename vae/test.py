@@ -22,7 +22,7 @@ def getthreshold(model, batch_size):
 def LoadModel(batch_size):
     data = datPreProcessing.load_test()
     model = VAE(data["test"].shape[1], batch_size=batch_size)
-    model.load_model(r"Test3.h5")
+    model.load_model(r"Test4.h5")
     return data, model
 
 
@@ -82,7 +82,12 @@ Accuracy is  0.5126906595164965
 """
 
 
-"""                    50   1000000
-
+"""                    100  1000000
+[[ 735417 1617534]
+ [ 627784 1725167]]
+f1 score is  0.6057838505582855
+precision is  0.5160997049990412
+Recall is  0.7331929139195844
+Accuracy is  0.5228719170097464
 
 """
