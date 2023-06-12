@@ -5,9 +5,11 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
+
 ids_datatypes = {
     "Dst Port": np.uint16,
     "Protocol": np.int8,
+    # "Timestamp": object,
     "Flow Duration": np.int64,
     "Tot Fwd Pkts": np.int16,
     "Tot Bwd Pkts": np.int16,
@@ -87,14 +89,6 @@ ids_datatypes = {
     "Label": object,
 }
 used_cols = ids_datatypes.keys()
-unused_cols = [
-    "Dst Port",
-    "Protocol",
-    "PSH Flag Cnt",
-    "Init Fwd Win Byts",
-    "Flow Byts/s",
-    "Flow Pkts/s",
-]
 
 
 class datPreProcessing(pd.DataFrame):
@@ -102,42 +96,40 @@ class datPreProcessing(pd.DataFrame):
         df = pd.read_csv(path, dtype=ids_datatypes, usecols=used_cols, low_memory=False)
         return df
 
-    def dropUnNessaryData(data):
-        data.drop(columns=unused_cols, axis=1, inplace=True)
-        return data
-
     def sepatrationLabel(data):
         data, label = data.drop(columns=["Label"]), data["Label"]
         return data, label
 
-    def minmaxscale(data):
-        scaler = MinMaxScaler().fit(data)
-        data = scaler.transform(data)
+    def minmaxscale(self, data):
+        self.scaler = MinMaxScaler().fit(data)
+        data = self.scaler.transform(data)
         return data
 
-    def standardscale(data):
-        scaler = StandardScaler().fit(data)
-        data = scaler.transform(data)
+    def standardscale(self, data):
+        self.scaler = StandardScaler().fit(data)
+        data = self.scaler.transform(data)
         return data
 
-    def load_train():
-        print(" Start Load Data")
+    def testscale(self, data):
+        return self.scaler.transform(data)
+
+    def load_train(self):
+        print(" Start Load train Data")
         train_data = datPreProcessing.dataReadCSV(r"trainData.csv")
-        train_data = datPreProcessing.dropUnNessaryData(train_data)
+        train_data = datPreProcessing.sepatrationLabel(train_data)[0]
+        train_data = self.standardscale(train_data)
         train, valid = train_test_split(
-            datPreProcessing.sepatrationLabel(train_data)[0],
+            train_data,
             test_size=0.2,
             random_state=0xFFFF,
         )
         del train_data
-        train = datPreProcessing.standardscale(np.asarray(train))
-        valid = datPreProcessing.standardscale(np.asarray(valid))
         return {"train": train, "valid": valid}
 
-    def load_test():
+    def load_test(self):
+        print(" Start Load test Data")
         test_data = datPreProcessing.dataReadCSV(r"testData.csv")
-        test_data = datPreProcessing.dropUnNessaryData(test_data)
         X_test, Y_test = datPreProcessing.sepatrationLabel(test_data)
         del test_data
-        X_test = datPreProcessing.minmaxscale(np.asarray(X_test))
+        X_test = self.testscale(X_test)
         return {"test": X_test, "label": Y_test}
