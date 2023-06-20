@@ -3,11 +3,14 @@ import numpy as np
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import Normalizer
+from sklearn.preprocessing import MaxAbsScaler
 from sklearn.model_selection import train_test_split
 
 
 ids_datatypes = {
-    "Dst Port": np.uint16,
+    "Dst Port": np.uint32,
     "Protocol": np.int8,
     # "Timestamp": object,
     "Flow Duration": np.int64,
@@ -20,7 +23,7 @@ ids_datatypes = {
     "Fwd Pkt Len Mean": np.float64,
     "Fwd Pkt Len Std": np.float64,
     "Bwd Pkt Len Max": np.int16,
-    "Bwd Pkt Len Min": np.int16,
+    "Bwd Pkt Len Min": np.float64,
     "Bwd Pkt Len Mean": np.float64,
     "Bwd Pkt Len Std": np.float64,
     "Flow Byts/s": np.float64,
@@ -40,9 +43,9 @@ ids_datatypes = {
     "Bwd IAT Max": np.int64,
     "Bwd IAT Min": np.int64,
     "Fwd PSH Flags": np.int8,
-    "Bwd PSH Flags": np.int8,
+    # "Bwd PSH Flags": np.int8,
     "Fwd URG Flags": np.int8,
-    "Bwd URG Flags": np.int8,
+    # "Bwd URG Flags": np.int8,
     "Fwd Header Len": np.int32,
     "Bwd Header Len": np.int32,
     "Fwd Pkts/s": np.float64,
@@ -53,26 +56,26 @@ ids_datatypes = {
     "Pkt Len Std": np.float64,
     "Pkt Len Var": np.float64,
     "FIN Flag Cnt": np.int8,
-    "SYN Flag Cnt": np.int8,
+    # "SYN Flag Cnt": np.int8,
     "RST Flag Cnt": np.int8,
     "PSH Flag Cnt": np.int8,
     "ACK Flag Cnt": np.int8,
     "URG Flag Cnt": np.int8,
-    "CWE Flag Count": np.int8,
+    # "CWE Flag Count": np.int8,
     "ECE Flag Cnt": np.int8,
     "Down/Up Ratio": np.int8,
     "Pkt Size Avg": np.float32,
     "Fwd Seg Size Avg": np.float32,
     "Bwd Seg Size Avg": np.float32,
-    "Fwd Byts/b Avg": np.int8,
-    "Fwd Pkts/b Avg": np.int8,
-    "Fwd Blk Rate Avg": np.int8,
-    "Bwd Byts/b Avg": np.int8,
-    "Bwd Pkts/b Avg": np.int8,
-    "Bwd Blk Rate Avg": np.int8,
-    "Subflow Fwd Pkts": np.int16,
-    "Subflow Fwd Byts": np.int32,
-    "Subflow Bwd Pkts": np.int16,
+    # "Fwd Byts/b Avg": np.int8,
+    # "Bwd Byts/b Avg": np.int8,
+    # "Fwd Blk Rate Avg": np.int8,
+    # "Bwd Blk Rate Avg": np.int8,
+    # "Fwd Pkts/b Avg": np.int8,
+    # "Bwd Pkts/b Avg": np.int8,
+    # "Subflow Fwd Pkts": np.int16,
+    # "Subflow Fwd Byts": np.int32,
+    # "Subflow Bwd Pkts": np.int16,
     "Subflow Bwd Byts": np.int32,
     "Init Fwd Win Byts": np.int32,
     "Init Bwd Win Byts": np.int32,
@@ -100,6 +103,9 @@ class datPreProcessing(pd.DataFrame):
         data, label = data.drop(columns=["Label"]), data["Label"]
         return data, label
 
+    def sepatrationOutIn(data):
+        return data[data["Label"] == "1"], data[data["Label"] != "1"]
+
     def minmaxscale(self, data):
         self.scaler = MinMaxScaler().fit(data)
         data = self.scaler.transform(data)
@@ -110,26 +116,47 @@ class datPreProcessing(pd.DataFrame):
         data = self.scaler.transform(data)
         return data
 
+    def robustscale(self, data):
+        self.scaler = RobustScaler().fit(data)
+        data = self.scaler.transform(data)
+        return data
+
+    def normalizer(self, data):
+        self.scaler = Normalizer().fit(data)
+        data = self.scaler.transform(data)
+        return data
+
+    def maxAbsscale(self, data):
+        self.scaler = MaxAbsScaler().fit(data)
+        data = self.scaler.transform(data)
+        return data
+
     def testscale(self, data):
         return self.scaler.transform(data)
 
     def load_train(self):
         print(" Start Load train Data")
-        train_data = datPreProcessing.dataReadCSV(r"trainData.csv")
-        train_data = datPreProcessing.sepatrationLabel(train_data)[0]
+        train_data = datPreProcessing.dataReadCSV(r"train.csv")
+        train_data, label = datPreProcessing.sepatrationLabel(train_data)
+        label = np.asarray(label) != "Benign"
         train_data = self.standardscale(train_data)
-        train, valid = train_test_split(
+        train, valid, train_label, valid_label = train_test_split(
             train_data,
-            test_size=0.2,
-            random_state=0xFFFF,
+            label,
+            test_size=0.25,
+            random_state=0x32,
         )
-        del train_data
-        return {"train": train, "valid": valid}
+        return {
+            "train": train,
+            "valid": valid,
+            "train_data": train_data,
+        }
 
     def load_test(self):
         print(" Start Load test Data")
-        test_data = datPreProcessing.dataReadCSV(r"testData.csv")
-        X_test, Y_test = datPreProcessing.sepatrationLabel(test_data)
+        test_data = datPreProcessing.dataReadCSV(r"test.csv")
+        test, label = datPreProcessing.sepatrationLabel(test_data)
+        test = self.scaler.transform(test)
         del test_data
-        X_test = self.testscale(X_test)
-        return {"test": X_test, "label": Y_test}
+
+        return {"test": test, "test_label": label}
