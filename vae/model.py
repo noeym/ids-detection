@@ -141,13 +141,12 @@ class VAE:
         #     ),
         # ]
         self.history = self.vae.fit(
-            data["train_data"],
-            data["train_data"],
+            train_gen,
             epochs=self.epochs,
             batch_size=self.batch_size,
             verbose=1,
             callbacks=callbacks,
-            validation_split=0.25,
+            validation_data=valid_gen,
             shuffle=True,
         )
         print("Complete traing vae")
