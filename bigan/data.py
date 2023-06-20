@@ -21,7 +21,7 @@ ids_datatypes = {
     "Fwd Pkt Len Min": np.int32,
     "Fwd Pkt Len Mean": np.float64,
     "Fwd Pkt Len Std": np.float64,
-    "Bwd Pkt Len Max": np.int16,
+    # "Bwd Pkt Len Max": np.int16,
     "Bwd Pkt Len Min": np.float64,
     "Bwd Pkt Len Mean": np.float64,
     "Bwd Pkt Len Std": np.float64,
@@ -94,7 +94,7 @@ used_cols = ids_datatypes.keys()
 
 
 class datPreProcessing(pd.DataFrame):
-    def dataReadCSV(path, uncol):
+    def dataReadCSV(path):
         df = pd.read_csv(path, dtype=ids_datatypes, usecols=used_cols, low_memory=False)
         return df
 
@@ -133,17 +133,16 @@ class datPreProcessing(pd.DataFrame):
     def testscale(self, data):
         return self.scaler.transform(data)
 
-    def load_train(self, i):
-        self.unused_col = i
+    def load_train(self):
         print(" Start Load train Data")
-        train_data = datPreProcessing.dataReadCSV(r"train.csv", self.unused_col)
+        train_data = datPreProcessing.dataReadCSV(r"train.csv")
         train_data = datPreProcessing.sepatrationLabel(train_data)[0]
         train_data = self.standardscale(train_data)
         return {"train": train_data}
 
     def load_test(self):
         print(" Start Load test Data")
-        test_data = datPreProcessing.dataReadCSV(r"test.csv", self.unused_col)
+        test_data = datPreProcessing.dataReadCSV(r"test.csv")
         test, label = datPreProcessing.sepatrationLabel(test_data)
         test = self.scaler.transform(test)
 

@@ -15,17 +15,17 @@ from test import *
 
 def train_bigan():
     preprocess = datPreProcessing()
-    data = preprocess.load_train(num)
+    data = preprocess.load_train()
     print("Completed Load Data")
     print("Start Training")
     batch_size = 100000
-    epochs = 500
+    epochs = 600
     model = BIGAN(data["train"].shape[1], batch_size, epochs)
     model.train(data["train"])
     model.load_model()
     anomaly_train_loss = model.calculateAnomaly(data["train"])
     test_data = preprocess.load_test()
-    anomaly_test_loss = model.calculateAnomaly(data["test"])
+    anomaly_test_loss = model.calculateAnomaly(test_data["test"])
     Y_test = np.asarray(test_data["test_label"]) != "Benign"
     threshold = 0.0
     best_score = 0.0
@@ -34,7 +34,7 @@ def train_bigan():
         score = anomaly_test_loss > j
         current_score = f1_score(Y_test, score)
         if best_score < current_score:
-            print(k, i)
+            print(i)
             best_score = current_score
             threshold = j
 

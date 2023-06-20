@@ -9,12 +9,12 @@ class BIGAN:
         self.input_shape = (dim,)
         self.batch_size = batch_size
         self.epochs = epochs
-        self.dense_dim = int(dim / 2)
-        self.latent_dim = int(dim / 4)
+        self.dense_dim = dim / 2
+        self.latent_dim = dim / 4
         self.create_model()
 
     def create_model(self):
-        optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(
             loss=["binary_crossentropy"], optimizer=optimizer, metrics=["accuracy"]
@@ -109,7 +109,7 @@ class BIGAN:
 
         self.load_model()
 
-    def calculateAnomaly(self, input_data, weight_parameter=0.1, lnorm_degree=1):
+    def calculateAnomaly(self, input_data, weight_parameter=0.2, lnorm_degree=1):
         z_ = self.encoder.predict(input_data)
 
         input_data_ = self.generator.predict(z_)
